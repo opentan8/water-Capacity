@@ -1,6 +1,8 @@
 # water-Capacity
 破解倒水解谜游戏的算法
 
+编写语言：python3
+
 执行方式：命令行执行
 ./water.py args
 
