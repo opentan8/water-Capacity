@@ -65,15 +65,17 @@ def counter(start=0):
 
 def main():
   cnt = 0
+  start = START 
   for result in resolve(DEFAULT, TARGETS):
     cnt += 1
     print('Solution %d:' % cnt)
     output(result)
-    print('Time Used: %dms' % (1000*(time.time()-start)))
-#   input()
+    print('Time Used: %dμs' % ((10**6)*(time.time()-start)))
+    input()
+    start = time.time()
 
 if __name__ == '__main__':
-  start = time.time()
+  START = time.time()
   NAN = 10000
   DEFAULT = [None, None, -1]
   BOTTLES, TARGETS = args_compose()
