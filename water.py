@@ -5,14 +5,18 @@ from itertools import permutations as perm
 
 def args_compose(args=sys.argv[1:]):
   args = tuple(map(eval, args))
+  limit = [abs(item) for item in args if item < 0]
+  args = tuple(map(abs, args))
   leng = args[0]+1
   bottles = args[1:leng]
   targets = [(args[i], bottles.index(args[i+1])) for i in range(leng,len(args),2)]
-  return bottles, targets
+  limit = [bottles.index(item) for item in limit]
+  return bottles, targets, limit
 
 def puring(pure):
   for item in perm(ITER, 2):
     src, dest = item
+    if src in LIMIT: continue
     num = min(pure[src], BOTTLES[dest] - pure[dest])
     if num == 0: continue
     pure_copy = pure.copy()
@@ -70,7 +74,7 @@ def main():
     cnt += 1
     print('Solution %d:' % cnt)
     output(result)
-    print('Time Used: %dμs' % ((10**6)*(time.time()-start)))
+    print('Time Used: %dμs' % ((10**6)*(time.time() - start)))
     input()
     start = time.time()
 
@@ -78,11 +82,10 @@ if __name__ == '__main__':
   START = time.time()
   NAN = 10000
   DEFAULT = [None, None, -1]
-  BOTTLES, TARGETS = args_compose()
+  BOTTLES, TARGETS, LIMIT = args_compose()
   CURR = []
   DUMP = [[0 for i in BOTTLES] + [NAN]]
   BOTTLES_OUT = BOTTLES + ('N/A',)
   BOTTLES += (NAN,)
   ITER = range(len(BOTTLES))
   main()
-#
