@@ -14,8 +14,7 @@ def args_compose(args=sys.argv[1:]):
   return bottles, targets, limit
 
 def puring(pure):
-  for item in perm(ITER, 2):
-    src, dest = item
+  for src, dest in perm(ITER, 2):
     if src in LIMIT: continue
     num = min(pure[src], BOTTLES[dest] - pure[dest])
     if num == 0: continue
