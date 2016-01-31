@@ -11,6 +11,7 @@ def args_compose(args=sys.argv[1:]):
   bottles = args[1:leng]
   targets = [(args[i], bottles.index(args[i+1])) for i in range(leng,len(args),2)]
   limit = [bottles.index(item) for item in limit]
+  if not (limit and targets): raise ValueError('Arguments not correct.')
   return bottles, targets, limit
 
 def puring(pure):
@@ -81,7 +82,8 @@ if __name__ == '__main__':
   START = time.time()
   NAN = 10000
   DEFAULT = [None, None, -1]
-  BOTTLES, TARGETS, LIMIT = args_compose(sys.argv[1:])
+  try: BOTTLES, TARGETS, LIMIT = args_compose(sys.argv[1:])
+  except Exception as e: print(e); exit()
   CURR = []
   DUMP = [[0 for i in BOTTLES] + [NAN]]
   BOTTLES_OUT = BOTTLES + ('N/A',)
