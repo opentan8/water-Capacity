@@ -18,7 +18,7 @@ def puring(pure):
     if src in LIMIT: continue
     num = min(pure[src], BOTTLES[dest] - pure[dest])
     if num == 0: continue
-    pure_copy = pure.copy()
+    pure_copy = pure[:]
     pure_copy[src] -= num
     pure_copy[dest] += num
     if pure_copy in CURR:
@@ -31,7 +31,7 @@ def puring(pure):
     yield [src, dest, ind]
 
 def repeat(pures):
-  CURR.clear()
+  CURR = []
   for pure in pures:
     pure_copy = DUMP[pure[-1]]
     for item in puring(pure_copy):
@@ -41,7 +41,7 @@ def resolve(default, targets):
   pures = [default]
   result = []
   while pures:
-    result.clear()
+    result = []
     for pure in repeat(pures):
       for target in targets:
         if DUMP[pure[-1]][target[1]] != target[0]:
@@ -49,7 +49,7 @@ def resolve(default, targets):
           break
       else:
         yield pure
-    pures = result.copy()
+    pures = result[:]
 
 def output(result):
   extra = result[3:]
@@ -73,7 +73,7 @@ def main():
     cnt += 1
     print('Solution %d:' % cnt)
     output(result)
-    print('Time Used: %dμs' % ((10**6)*(time.time() - start)))
+    print('Time Used: %d μs' % ((10**6)*(time.time() - start)))
     input()
     start = time.time()
 
@@ -81,10 +81,11 @@ if __name__ == '__main__':
   START = time.time()
   NAN = 10000
   DEFAULT = [None, None, -1]
-  BOTTLES, TARGETS, LIMIT = args_compose()
+  BOTTLES, TARGETS, LIMIT = args_compose(sys.argv[1:])
   CURR = []
   DUMP = [[0 for i in BOTTLES] + [NAN]]
   BOTTLES_OUT = BOTTLES + ('N/A',)
   BOTTLES += (NAN,)
   ITER = range(len(BOTTLES))
-  main()
+  try: main()
+  except KeyboardInterrupt: print('Exit Successful.')
