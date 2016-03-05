@@ -11,7 +11,7 @@ def args_compose(args=sys.argv[1:]):
   bottles = args[1:leng]
   targets = [(args[i], bottles.index(args[i+1])) for i in range(leng,len(args),2)]
   limit = [bottles.index(item) for item in limit]
-  if not (limit and targets): raise ValueError('Arguments not correct.')
+  if not (bottles and targets): raise ValueError('Arguments not correct.')
   return bottles, targets, limit
 
 def puring(pure):
