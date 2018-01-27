@@ -2,92 +2,107 @@
 
 import time, sys
 from itertools import permutations as perm
+from collections import defaultdict
 
-def args_compose(args=sys.argv[1:]):
-  args = tuple(map(eval, args))
-  limit = [abs(item) for item in args if item < 0]
-  args = tuple(map(abs, args))
-  leng = args[0]+1
-  bottles = args[1:leng]
-  targets = [(args[i], bottles.index(args[i+1])) for i in range(leng,len(args),2)]
-  limit = [bottles.index(item) for item in limit]
-  if not (bottles and targets): raise ValueError('Arguments not correct.')
-  return bottles, targets, limit
 
-def puring(pure):
-  for src, dest in perm(ITER, 2):
-    if src in LIMIT: continue
-    num = min(pure[src], BOTTLES[dest] - pure[dest])
-    if num == 0: continue
-    pure_copy = pure[:]
-    pure_copy[src] -= num
-    pure_copy[dest] += num
-    if pure_copy in CURR:
-      ind = DUMP.index(pure_copy)
-    elif pure_copy not in DUMP:
-      ind = len(DUMP)
-      DUMP.append(pure_copy)
+class WaterCapacity:
+  def __init__(self):
+    self.water_capacity = (0, 8), (0, 34), (0, 3)
+    self.expects = [(0, 8), (1, 14)]
+    self.limits = []
+
+    self.bottles, self.capacity = zip(*self.water_capacity)
+    if not self.check():
+      raise ValueError("Arguments Error")
+    self.solution_count = 0
+    
+    self.cache_history = {self.bottles}
+    self.cache_current = defaultdict(set)
+    self.run_bottles = defaultdict(set)
+    self.run_bottles[self.bottles].add(tuple())
+    
+    self.actions = self.get_actions()
+    self.start_time = time.time()
+
+  def check(self):
+    return all((
+      # check water_capacity
+      all(0 <= a <= b and a == int(a) and b == int(b)
+          for a, b in self.water_capacity),
+      # check expects
+      all(i in range(len(self.water_capacity)) and v == int(v)
+          and 0 <= v <= self.capacity[i] for i, v in self.expects),
+      # check limits
+      all(i in range(len(self.water_capacity)) for i in self.limits),
+    ))
+
+  def get_actions(self):
+    actions = perm(tuple(range(len(self.water_capacity))) + (None, ), 2)
+    return tuple(action for action in actions if action[0] not in self.limits)    
+
+  def is_finished(self, bottles):
+    return all(bottles[i] == v for i, v in self.expects)
+
+  def pour(self, a, b, bottles):
+    _bottles = list(bottles)
+    if a is None:
+      _bottles[b] = self.capacity[b]
+    elif b is None:
+      _bottles[a] = 0
     else:
-      continue
-    yield [src, dest, ind]
+      n = min(_bottles[a], self.capacity[b] - _bottles[b])
+      if n > 0:
+        _bottles[a] -= n
+        _bottles[b] += n
+    return tuple(_bottles)
 
-def repeat(pures):
-  CURR = []
-  for pure in pures:
-    pure_copy = DUMP[pure[-1]]
-    for item in puring(pure_copy):
-      yield pure + item
-      
-def resolve(default, targets):
-  pures = [default]
-  result = []
-  while pures:
-    result = []
-    for pure in repeat(pures):
-      for target in targets:
-        if DUMP[pure[-1]][target[1]] != target[0]:
-          result.append(pure)
-          break
-      else:
-        yield pure
-    pures = result[:]
+  def run(self):
+    while True:
+      if not self.run_bottles:
+        self.cache_history |= set(self.cache_current)
+        self.run_bottles = self.cache_current.copy()
+        self.cache_current.clear()
+      if not self.run_bottles:
+        break
+      bottles, steps = self.run_bottles.popitem()
+      for i, action in enumerate(self.actions):
+        _bottles = self.pour(*action, bottles)
+        if _bottles not in self.cache_history:
+          for step in steps:
+            self.cache_current[_bottles].add(step + (i, ))
+          if self.is_finished(_bottles):
+            self.end_time = time.time()
+            self.display(_bottles)
+            self.start_time = time.time()
 
-def output(result):
-  extra = result[3:]
-  cnt = 0
-  while extra:
-    src, dest, ind, *extra = extra
-    cnt += 1
-    print('%3d: %3s --> %3s:  %s' % (cnt, BOTTLES_OUT[src], BOTTLES_OUT[dest], DUMP[ind][:-1]))
+  def display(self, bottles):
+    for steps in self.cache_current[bottles]:
+      self.solution_count += 1
+      bottles = tuple(self.bottles)
+      print('Solution %d:' % (self.solution_count))
+      for i, step in enumerate(steps, 1):
+        a, b = self.actions[step]
+        if a is None:
+          result = 'Fill  Bottle %2d' % (b + 1)
+        elif b is None:
+          result = 'Clear Bottle %2d' % (a + 1)
+        else:
+          result = 'Pour  %2d  To %2d' % (a + 1, b + 1)
+        bottles = self.pour(a, b, bottles)
+        print('%2d: %s, Result is %s' % (i, result, bottles))
+      print('Time Used %s' % self.timeformat(self.end_time - self.start_time))
+      input()
 
-def counter(start=0):
-  cnt = [start]
-  def count():
-    cnt[0] += 1
-    return cnt[0]
-  return count
+  def timeformat(self, seconds):
+    if seconds <= 10 ** -6:
+      return '%.4f ns' % (seconds * 10 ** 9)
+    elif seconds <= 10 ** -3:
+      return '%.4f μs' % (seconds * 10 ** 6)
+    elif seconds <= 1:
+      return '%.4f ms' % (seconds * 10 ** 3)
+    else:
+      return '%.4f s' % seconds
 
-def main():
-  cnt = 0
-  start = START 
-  for result in resolve(DEFAULT, TARGETS):
-    cnt += 1
-    print('Solution %d:' % cnt)
-    output(result)
-    print('Time Used: %d μs' % ((10**6)*(time.time() - start)))
-    input()
-    start = time.time()
 
-if __name__ == '__main__':
-  START = time.time()
-  NAN = 10000
-  DEFAULT = [None, None, -1]
-  try: BOTTLES, TARGETS, LIMIT = args_compose(sys.argv[1:])
-  except Exception as e: print(e); exit()
-  CURR = []
-  DUMP = [[0 for i in BOTTLES] + [NAN]]
-  BOTTLES_OUT = BOTTLES + ('N/A',)
-  BOTTLES += (NAN,)
-  ITER = range(len(BOTTLES))
-  try: main()
-  except KeyboardInterrupt: print('Exit Successful.')
+wc = WaterCapacity()
+wc.run()
